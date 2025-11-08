@@ -2,8 +2,17 @@ namespace Markdown;
 
 public class Token
 {
-    public int StartIndex;
-    public int TokenLength;
-    public TokenType Type;
-    public Token NestedToken;
+    public int StartIndex { get; set; }
+    public int TokenLength { get; set; }
+    public TokenType Type { get; set; }
+    public Token NestedToken { get; set; }
+    public IEnumerable<char> TokenContent { get; set; }
+
+    public Token(int startIndex, int tokenLength, TokenType type, Token nestedToken)
+    {
+        this.StartIndex = startIndex;
+        this.TokenLength = tokenLength;
+        this.Type = type;
+        this.NestedToken = nestedToken;
+    }
 }

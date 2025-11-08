@@ -2,7 +2,9 @@ namespace Markdown;
 
 public enum TokenType
 {
-    Italics = 0,
-    Bold = 1,
-    Title = 2,
+    Unknown = 0,
+    Italic = 1,
+    Bold = 2,
+    Title = 3,
+    Basic = 4
 }
