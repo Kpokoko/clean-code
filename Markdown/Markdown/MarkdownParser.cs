@@ -4,11 +4,10 @@ namespace Markdown;
 
 public class MarkdownParser : IParser
 {
-    private static Dictionary<string, TokenType> _markdownToTag = new()
+    private static Dictionary<string, TokenType> _pairMarkdownToTag = new()
     {
         {"_", TokenType.Italic},
         {"__", TokenType.Bold},
-        {"#", TokenType.Title}
     };
     
     private string _markdown;
@@ -19,7 +18,8 @@ public class MarkdownParser : IParser
     {
         _markdown = markdown;
         var tokensList = TokenizeText(markdown);
-        return BuildHTMLString(tokensList);
+        var htmlWithPairTags = BuildHTMLString(tokensList);
+        return ProcessUnpairLineTags(htmlWithPairTags);
     }
 
     public List<Token> TokenizeText(string markdown)
@@ -29,7 +29,7 @@ public class MarkdownParser : IParser
         var tagValidator = new MarkdownTagValidator(markdown);
         for (var i = 0; i < markdown.Length; ++i)
         {
-            if (!_markdownToTag.ContainsKey(markdown[i].ToString()))
+            if (!_pairMarkdownToTag.ContainsKey(markdown[i].ToString()))
                 continue;
             string currentTag = null;
             var tagLength = 1;
@@ -49,23 +49,23 @@ public class MarkdownParser : IParser
                 continue;
             }
 
-            var isOpening = stack.Count == 0 || stack.Peek().Type != _markdownToTag[currentTag];
+            var isOpening = stack.Count == 0 || stack.Peek().Type != _pairMarkdownToTag[currentTag];
             var isTagCorrect = currentTag is not null && tagValidator.IsTagPartCorrect(i, isOpening, tagLength);
             if (!isTagCorrect)
             {
                 i += tagLength - 1;
                 continue;
             }
-            if (stack.Count == 0 || stack.Peek().Type != _markdownToTag[currentTag])
+            if (stack.Count == 0 || stack.Peek().Type != _pairMarkdownToTag[currentTag])
             {
-                stack.Push(new RawToken(_markdownToTag[currentTag], tagLength, i));
+                stack.Push(new RawToken(_pairMarkdownToTag[currentTag], tagLength, i));
             }
             else
             {
                 var opening = stack.Pop();
                 if (tagValidator.HasTagContentInside(opening.StartIndex + tagLength, i - 1) &&
                     tagValidator.HasTagDigitsInside(opening.StartIndex + tagLength, i - 1) &&
-                    !tagValidator.IsTagSplittingWord(opening.StartIndex, i))
+                    !tagValidator.IsTagPartsSplittingWord(opening.StartIndex, i))
                 {
                     tokens.Add(CreateToken(opening, i));
                 }
@@ -142,5 +142,46 @@ public class MarkdownParser : IParser
     {
         var startIndex = rawToken.StartIndex;
         return new Token(startIndex, endIndex - rawToken.StartIndex - rawToken.TokenMarkLength, rawToken.Type, rawToken.TokenMarkLength);
+    }
+
+    private string ProcessUnpairLineTags(string htmlWithPairTags)
+    {
+        var lines = htmlWithPairTags.Split('\n');
+        var result = new StringBuilder();
+        var isListStarted = false;
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.TrimStart();
+            if (trimmedLine.StartsWith("# "))
+            {
+                if (isListStarted)
+                {
+                    result.Append("</ul>");
+                    isListStarted = false;
+                }
+                result.Append("<h1>").Append(trimmedLine.Substring(2)).Append("</h1>");
+            }
+            else if (trimmedLine.StartsWith("* "))
+            {
+                if (!isListStarted)
+                {
+                    result.Append("<ul>");
+                    isListStarted = true;
+                }
+                result.Append("<li>").Append(trimmedLine.Substring(2)).Append("</li>");
+            }
+            else
+            {
+                if (isListStarted)
+                {
+                    result.Append("</ul>");
+                    isListStarted = false;
+                }
+                result.Append(line);
+            }
+        }
+        if (isListStarted) result.Append("</ul>");
+        if (result.Length > 0 && result[^1] == '\n') result.Remove(result.Length - 1, 1);
+        return result.ToString();
     }
 }

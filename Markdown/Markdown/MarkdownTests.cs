@@ -6,7 +6,7 @@ namespace Markdown;
 [TestFixture]
 public class MarkdownTests
 {
-    private static Object[] _tokenizeTestCases = 
+    private static Object[] _tokenizePairTestCases = 
     {
         new Object[]
         {
@@ -24,18 +24,10 @@ public class MarkdownTests
                 new Token(0, 17, TokenType.Bold, 2)
             },
         },
-        new Object[]
-        {
-            "# текст текст текст",
-            new List<Token>
-            {
-                new Token(0, 17, TokenType.Title, 2)
-            },
-        },
     };
     
-    [TestCaseSource(nameof(_tokenizeTestCases))]
-    public void TokenizeBasicTags(string rawText, List<Token> expectedTokens)
+    [TestCaseSource(nameof(_tokenizePairTestCases))]
+    public void TokenizeBasicPairTags(string rawText, List<Token> expectedTokens)
     {
         var parser = new MarkdownParser();
         parser.TokenizeText(rawText).Should().BeEquivalentTo(expectedTokens);
@@ -84,6 +76,7 @@ public class MarkdownTests
     [TestCase("__текст текст текст__", "<strong>текст текст текст</strong>")]
     [TestCase("# текст текст текст", "<h1>текст текст текст</h1>")]
     [TestCase("текст текст текст", "текст текст текст")]
+    [TestCase("текст\n* текст\nтекст", "текст<ul><li>текст</li></ul>текст")]
     public void ParseBasicTags(string rawText, string expectedText)
     {
         var parser = new MarkdownParser();
@@ -111,6 +104,7 @@ public class MarkdownTests
     [TestCase("____текст текст текст", "____текст текст текст")]
     [TestCase("____", "____")]
     [TestCase("# __текст _текст_ текст__", "<h1><strong>текст <em>текст</em> текст</strong></h1>")]
+    [TestCase("текст\n* _текст_\n* __текст__", "текст<ul><li><em>текст</em></li><li><strong>текст</strong></li></ul>")]
     public void TestTagsInteraсtions(string rawText, string expectedText)
     {
         var parser = new MarkdownParser();

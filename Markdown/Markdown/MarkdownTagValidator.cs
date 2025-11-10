@@ -20,7 +20,7 @@ public class MarkdownTagValidator
                || (_markdown[start] == '#' && start + length <= _markdown.Length && _markdown[start + 1] == ' ');
     }
 
-    public bool IsTagSplittingWord(int start, int end)
+    public bool IsTagPartsSplittingWord(int start, int end)
     {
         var isStartSplittingWord =  start > 0 && char.IsLetter(_markdown[start - 1]);
         var isEndSplittingWord = end < _markdown.Length - 1 && char.IsLetter(_markdown[end + 1]);
