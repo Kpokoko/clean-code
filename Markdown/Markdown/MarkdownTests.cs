@@ -13,7 +13,7 @@ public class MarkdownTests
             "_текст текст текст_",
             new List<Token>
             {
-                new Token(1, 17, TokenType.Italic, null)
+                new Token(0, 17, TokenType.Italic, 1)
             },
         },
         new Object[]
@@ -21,7 +21,7 @@ public class MarkdownTests
             "__текст текст текст__",
             new List<Token>
             {
-                new Token(2, 17, TokenType.Bold, null)
+                new Token(0, 17, TokenType.Bold, 2)
             },
         },
         new Object[]
@@ -29,7 +29,7 @@ public class MarkdownTests
             "# текст текст текст",
             new List<Token>
             {
-                new Token(2, 17, TokenType.Title, null)
+                new Token(0, 17, TokenType.Title, 2)
             },
         },
     };
@@ -47,33 +47,37 @@ public class MarkdownTests
         {
             new List<Token>
             {
-                new Token(0, 17, TokenType.Italic, null)
+                new Token(0, 17, TokenType.Italic, 1)
             },
+            "_текст текст текст_",
             "<em>текст текст текст</em>",
         },
         new Object[]
         {
             new List<Token>
             {
-                new Token(0, 17, TokenType.Bold, null)
+                new Token(0, 17, TokenType.Bold, 2)
             },
+            "__текст текст текст__",
             "<strong>текст текст текст</strong>",
         },
         new Object[]
         {
             new List<Token>
             {
-                new Token(0, 17, TokenType.Title, null)
+                new Token(0, 17, TokenType.Title, 2)
             },
+            "# текст текст текст",
             "<h1>текст текст текст</h1>",
         },
     };
     
-    [TestCaseSource(nameof(_tokenizeTestCases))]
-    public void WrapBasicTags(List<Token> tokens, string expectedText)
+    [TestCaseSource(nameof(_wrapTokensTestCases))]
+    public void WrapBasicTags(List<Token> tokens, string markdownText, string expectedText)
     {
         var parser = new MarkdownParser();
-        parser.WrapTokensWithTags(tokens).Should().BeEquivalentTo(tokens);
+        parser.SetMarkdownText(markdownText);
+        parser.WrapTokensWithTags(tokens).Should().BeEquivalentTo(expectedText);
     }
     
     [TestCase("_текст текст текст_", "<em>текст текст текст</em>")]
@@ -88,24 +92,26 @@ public class MarkdownTests
 
     [TestCase(@"текст \текст тек\ст", @"текст \текст тек\ст")]
     [TestCase(@"\_текст текст \_текст", @"\_текст текст \_текст")]
-    [TestCase(@"\\_текст текст\\_ текст", @"\\_текст текст\\_ текст")]
+    [TestCase(@"\\_текст текст\\_ текст", @"\\<em>текст текст\\</em> текст")]
     public void TestScreeningParsing(string rawText, string expectedText)
     {
         var parser = new MarkdownParser();
         parser.Render(rawText).Should().BeEquivalentTo(expectedText);
     }
 
-    [TestCase("__текст _текст_ текст__", "<strong>текст <em>текст<em/> текст</strong>")]
+    [TestCase("__текст _текст_ текст__", "<strong>текст <em>текст</em> текст</strong>")]
+    [TestCase("_текст __текст__ текст_", "<em>текст __текст__ текст</em>")]
     [TestCase("текст текст_12_3", "текст текст_12_3")]
-    [TestCase("_тек_ст те_кс_т тек_ст_", "<em>тек</em>ст те<em>кс</em>т тек<em>ст</em>\"")]
+    [TestCase("_тек_ст те_кс_т тек_ст_", "<em>тек</em>ст те<em>кс</em>т тек<em>ст</em>")]
     [TestCase("текст т_екст тек_ст", "текст т_екст тек_ст")]
     [TestCase("текст __текст_ текст", "текст __текст_ текст")]
     [TestCase("текст_ текст_ текст", "текст_ текст_ текст")]
     [TestCase("текст _текст _текст", "текст _текст _текст")]
-    [TestCase("__текст_ текст__ _текст", "__текст_ текст__ _текст")]
+    [TestCase("__текст _текст__ _текст", "__текст _текст__ _текст")]
     [TestCase("____текст текст текст", "____текст текст текст")]
-    [TestCase("# __текст _текст_ текст__", "<h1><strong>текст <em>текст</em> текст</strong>")]
-    public void TestTagsInterations(string rawText, string expectedText)
+    [TestCase("____", "____")]
+    [TestCase("# __текст _текст_ текст__", "<h1><strong>текст <em>текст</em> текст</strong></h1>")]
+    public void TestTagsInteraсtions(string rawText, string expectedText)
     {
         var parser = new MarkdownParser();
         parser.Render(rawText).Should().BeEquivalentTo(expectedText);

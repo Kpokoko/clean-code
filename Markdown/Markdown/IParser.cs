@@ -6,7 +6,5 @@ public interface IParser
 
     public List<Token> TokenizeText(string markdown);
 
-    public List<string> WrapTokensWithTags(List<Token> tokens);
-
-    public string RecoverStringFromTagList(List<string> tags);
+    public string BuildHTMLString(List<Token> tokens);
 }

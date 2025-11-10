@@ -13,7 +13,6 @@ public class MarkdownTagValidator
     {
         var isTagScreened = (start > 0 && _markdown[start - 1] == '\\')
                             && (start > 1 && _markdown[start - 2] != '\\');
-                            //|| start == 1;
         if (isOpeningTag)
             return !isTagScreened && _markdown[start + length] != ' '
                    || (_markdown[start] == '#' && _markdown[start] == '#' && _markdown[start + 1] == ' ');
