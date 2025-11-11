@@ -1,3 +1,4 @@
+using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -109,5 +110,24 @@ public class MarkdownTests
     {
         var parser = new MarkdownParser();
         parser.Render(rawText).Should().BeEquivalentTo(expectedText);
+    }
+
+    [TestCase(10001)]
+    [TestCase(100001)]
+    [TestCase(1000001)]
+    //[TestCase(10000001)] // Этот тест работает около 6 секунд, раскомментировать только 
+    public void PerformanceTests(int stringLength)
+    {
+        var sb = new StringBuilder();
+        for (int i = 0; i < stringLength; i++)
+        {
+            sb.Append("__a");
+        }
+        sb.Append("__");
+        var s = sb.ToString();
+        var parser = new MarkdownParser();
+        var res = parser.Render(s);
+        Console.WriteLine(res);
+
     }
 }
