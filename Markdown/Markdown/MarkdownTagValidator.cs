@@ -14,10 +14,8 @@ public class MarkdownTagValidator
         var isTagScreened = (start > 0 && _markdown[start - 1] == '\\')
                             && (start > 1 && _markdown[start - 2] != '\\');
         if (isOpeningTag)
-            return !isTagScreened && _markdown[start + length] != ' '
-                   || (_markdown[start] == '#' && _markdown[start] == '#' && _markdown[start + 1] == ' ');
-        return !isTagScreened && _markdown[start - 1] != ' '
-               || (_markdown[start] == '#' && start + length <= _markdown.Length && _markdown[start + 1] == ' ');
+            return !isTagScreened && _markdown[start + length] != ' ';
+        return !isTagScreened && _markdown[start - 1] != ' ';
     }
 
     public bool IsTagPartsSplittingWord(int start, int end)
@@ -36,6 +34,6 @@ public class MarkdownTagValidator
 
     public bool HasTagDigitsInside(int start, int end)
     {
-        return !_markdown.Substring(start, end - start + 1).Any(char.IsDigit);
+        return _markdown.Substring(start, end - start + 1).Any(char.IsDigit);
     }
 }

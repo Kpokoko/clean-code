@@ -7,18 +7,18 @@ public class TagBuilder
     public static Tag Header => new("h1");
     public static Tag ListItem => new("li");
     
-    public (string openingTag, string closingTag) BuildTag(string markdownTag)
+    public TokenWrappers GetWrappers(string markdownTag)
     {
         switch (markdownTag)
         {
             case "Bold":
-                return (Bold.OpeningTag, Bold.ClosingTag);
+                return new TokenWrappers(Bold.OpeningTag, Bold.ClosingTag);
             case "Italic":
-                return (Italic.OpeningTag, Italic.ClosingTag);
+                return new TokenWrappers(Italic.OpeningTag, Italic.ClosingTag);
             case "Title":
-                return (Header.OpeningTag, Header.ClosingTag);
+                return new TokenWrappers(Header.OpeningTag, Header.ClosingTag);
             case "ListItem":
-                return (ListItem.OpeningTag, ListItem.OpeningTag);
+                return new TokenWrappers(ListItem.OpeningTag, ListItem.ClosingTag);
             default:
                 throw new Exception($"Unknown tag '{markdownTag}'");
         }

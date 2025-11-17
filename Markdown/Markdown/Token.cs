@@ -6,7 +6,7 @@ public class Token
     public int TokenLength { get; set; }
     public TokenType Type { get; set; }
     public int TokenMarkLength { get; set; }
-    // public Token NestedToken { get; set; }
+    public TokenWrappers TokenWrappers { get; private set; }
 
     public Token(int startIndex, int tokenLength, TokenType type, int tokenMarkLength)
     {
@@ -14,5 +14,11 @@ public class Token
         this.TokenLength = tokenLength;
         this.Type = type;
         this.TokenMarkLength = tokenMarkLength;
+    }
+    
+    public Token SetTokenWrappers(TokenWrappers tokenWrappers)
+    {
+        this.TokenWrappers = tokenWrappers;
+        return this;
     }
 }

@@ -42,8 +42,11 @@ public class MarkdownTests
             {
                 new Token(0, 17, TokenType.Italic, 1)
             },
-            "_текст текст текст_",
-            "<em>текст текст текст</em>",
+            new List<Token>
+            {
+                new Token(0, 17, TokenType.Italic, 1)
+                    .SetTokenWrappers(new TokenWrappers("<em>", "</em>"))
+            },
         },
         new Object[]
         {
@@ -51,8 +54,11 @@ public class MarkdownTests
             {
                 new Token(0, 17, TokenType.Bold, 2)
             },
-            "__текст текст текст__",
-            "<strong>текст текст текст</strong>",
+            new List<Token>
+            {
+                new Token(0, 17, TokenType.Bold, 2)
+                    .SetTokenWrappers(new TokenWrappers("<strong>", "</strong>"))
+            },
         },
         new Object[]
         {
@@ -60,17 +66,19 @@ public class MarkdownTests
             {
                 new Token(0, 17, TokenType.Title, 2)
             },
-            "# текст текст текст",
-            "<h1>текст текст текст</h1>",
+            new List<Token>
+            {
+                new Token(0, 17, TokenType.Title, 2)
+                    .SetTokenWrappers(new TokenWrappers("<h1>", "</h1>"))
+            },
         },
     };
     
     [TestCaseSource(nameof(_wrapTokensTestCases))]
-    public void WrapBasicTags(List<Token> tokens, string markdownText, string expectedText)
+    public void WrapBasicTags(List<Token> tokens, List<Token> expected)
     {
         var parser = new MarkdownParser();
-        parser.SetMarkdownText(markdownText);
-        parser.WrapTokensWithTags(tokens).Should().BeEquivalentTo(expectedText);
+        parser.AddTokenWrappers(tokens).Should().BeEquivalentTo(expected);
     }
     
     [TestCase("_текст текст текст_", "<em>текст текст текст</em>")]
@@ -115,7 +123,7 @@ public class MarkdownTests
     [TestCase(10001)]
     [TestCase(100001)]
     [TestCase(1000001)]
-    //[TestCase(10000001)] // Этот тест работает около 6 секунд, раскомментировать только 
+    //[TestCase(10000001)] // Этот тест работает около 6 секунд, раскомментировать только
     public void PerformanceTests(int stringLength)
     {
         var sb = new StringBuilder();

@@ -2,23 +2,19 @@ using System.Text;
 
 namespace Markdown;
 
-public class MarkdownParser : IParser
+public class MarkdownParser : IMarkdownParser
 {
-    private static Dictionary<string, TokenType> _pairMarkdownToTag = new()
+    private readonly Dictionary<string, TokenType> _pairMarkdownToTag = new()
     {
         {"_", TokenType.Italic},
         {"__", TokenType.Bold},
+        {"#", TokenType.Title},
     };
-    
-    private string _markdown;
-    
-    public void SetMarkdownText(string markdown) => this._markdown = markdown; // Только для теста обёртки токенов в теги
     
     public string Render(string markdown)
     {
-        _markdown = markdown;
         var tokensList = TokenizeText(markdown);
-        var htmlWithPairTags = BuildHTMLString(tokensList);
+        var htmlWithPairTags = BuildHTMLString(tokensList, markdown);
         return ProcessUnpairLineTags(htmlWithPairTags);
     }
 
@@ -50,7 +46,7 @@ public class MarkdownParser : IParser
             }
 
             var isOpening = stack.Count == 0 || stack.Peek().Type != _pairMarkdownToTag[currentTag];
-            var isTagCorrect = currentTag is not null && tagValidator.IsTagPartCorrect(i, isOpening, tagLength);
+            var isTagCorrect = tagValidator.IsTagPartCorrect(i, isOpening, tagLength);
             if (!isTagCorrect)
             {
                 i += tagLength - 1;
@@ -64,7 +60,7 @@ public class MarkdownParser : IParser
             {
                 var opening = stack.Pop();
                 if (tagValidator.HasTagContentInside(opening.StartIndex + tagLength, i - 1) &&
-                    tagValidator.HasTagDigitsInside(opening.StartIndex + tagLength, i - 1) &&
+                    !tagValidator.HasTagDigitsInside(opening.StartIndex + tagLength, i - 1) &&
                     !tagValidator.IsTagPartsSplittingWord(opening.StartIndex, i))
                 {
                     tokens.Add(CreateToken(opening, i));
@@ -88,53 +84,56 @@ public class MarkdownParser : IParser
         return tokens;
     }
 
-    public List<string> WrapTokensWithTags(List<Token> tokens)
+    public List<Token> AddTokenWrappers(List<Token> tokens)
     {
-        var wrappedTokens = new List<string>();
         var tagBuilder = new TagBuilder();
         foreach (var token in tokens)
         {
-            var tags = tagBuilder.BuildTag(token.Type.ToString());
-            var builder = new StringBuilder();
-            builder.Append(tags.openingTag)
-                .Append(_markdown.Substring(token.StartIndex + token.TokenMarkLength, token.TokenLength))
-                .Append(tags.closingTag);
-            wrappedTokens.Add(builder.ToString());
+            var wrappers = tagBuilder.GetWrappers(token.Type.ToString());
+            token.SetTokenWrappers(wrappers);
         }
-        return wrappedTokens;
+        return tokens;
     }
 
-    public string BuildHTMLString(List<Token> tokens)
+    public string BuildHTMLString(List<Token> tokens, string markdown)
     {
+        if (string.IsNullOrWhiteSpace(markdown) || tokens.Count == 0)
+            return markdown;
         tokens = tokens
             .OrderBy(t => t.StartIndex)
             .ToList();
-        var wrappedTags = WrapTokensWithTags(tokens);
-        if (string.IsNullOrWhiteSpace(_markdown) || wrappedTags.Count == 0 || wrappedTags.Count == 0)
-            return _markdown;
+        tokens = AddTokenWrappers(tokens);
         var htmlString = new StringBuilder();
-        var currEndIndex = 0;
-        
-        for (var i = 0; i < tokens.Count; ++i)
+        var tagStartPositions = new Dictionary<int, Token>();
+        var tagEndPositions = new Dictionary<int, Token>();
+        var openedTags = new Stack<Token>();
+        foreach (var token in tokens)
         {
-            var token = tokens[i];
-            if (token.StartIndex > currEndIndex)
-                htmlString.Append(_markdown.Substring(currEndIndex,
-                    token.StartIndex - currEndIndex));
-            if (token.StartIndex >= currEndIndex)
-                htmlString.Append(wrappedTags[i]);
-            else
-            {
-                var oldData = _markdown
-                    .Substring(token.StartIndex, token.TokenLength + token.TokenMarkLength * 2);
-                htmlString.Replace(oldData, wrappedTags[i]);
-            }
-            currEndIndex = Math.Max(token.StartIndex + token.TokenLength + token.TokenMarkLength * 2, currEndIndex);
+            tagStartPositions.Add(token.StartIndex, token);
+            tagEndPositions.Add(token.StartIndex + token.TokenLength + token.TokenMarkLength, token);
         }
-        var lastToken = tokens[^1];
-        if (currEndIndex < _markdown.Length - lastToken.TokenMarkLength)
-            htmlString.Append(_markdown.Substring(currEndIndex,
-                _markdown.Length - lastToken.TokenMarkLength - currEndIndex + 1));
+
+        for (var i = 0; i < markdown.Length; ++i)
+        {
+            if (tagStartPositions.ContainsKey(i))
+            {
+                htmlString.Append(tagStartPositions[i].TokenWrappers.TokenStart);
+                openedTags.Push(tagStartPositions[i]);
+                i += tagStartPositions[i].TokenMarkLength - 1;
+                continue;
+            }
+            if (tagEndPositions.ContainsKey(i))
+            {
+                htmlString.Append(tagEndPositions[i].TokenWrappers.TokenEnd);
+                openedTags.Pop();
+                i += tagEndPositions[i].TokenMarkLength - 1;
+                continue;
+            }
+            htmlString.Append(markdown[i]);
+        }
+
+        while (openedTags.Count > 0)
+            htmlString.Append(openedTags.Pop().TokenWrappers.TokenEnd);
         return htmlString.ToString();
     }
 
