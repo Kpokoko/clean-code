@@ -6,5 +6,6 @@ public enum TokenType
     Italic = 1,
     Bold = 2,
     Title = 3,
-    ListItem = 4,
+    List = 4,
+    ListItem = 5,
 }

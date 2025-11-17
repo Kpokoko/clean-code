@@ -36,4 +36,14 @@ public class MarkdownTagValidator
     {
         return _markdown.Substring(start, end - start + 1).Any(char.IsDigit);
     }
+
+    public bool IsNewLineStarted(int index)
+    {
+        return index == 0 || _markdown[index - 1] == '\n';
+    }
+
+    public bool IsListOpening(int index)
+    {
+        return _markdown[index] == '*' && IsNewLineStarted(index);
+    }
 }

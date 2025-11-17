@@ -85,7 +85,7 @@ public class MarkdownTests
     [TestCase("__текст текст текст__", "<strong>текст текст текст</strong>")]
     [TestCase("# текст текст текст", "<h1>текст текст текст</h1>")]
     [TestCase("текст текст текст", "текст текст текст")]
-    [TestCase("текст\n* текст\nтекст", "текст<ul><li>текст</li></ul>текст")]
+    [TestCase("текст\n* текст\n* текст", "текст<ul><li>текст</li><li>текст</li></ul>")]
     public void ParseBasicTags(string rawText, string expectedText)
     {
         var parser = new MarkdownParser();
